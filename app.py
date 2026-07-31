@@ -5,13 +5,13 @@ from PIL import Image
 # 1. Page Configuration for Wide View (Zero Scrolling)
 st.set_page_config(page_title="Pro AI Analyzer", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS for UI styling and Popup look
+# Custom CSS for UI styling and Popup look (🚨 FIXED: unsafe_allow_html=True)
 st.markdown("""
     <style>
     .report-box { padding: 15px; border-radius: 10px; background-color: #1E1E1E; margin-bottom: 10px; border-left: 5px solid #00FFCC; }
     .verdict-box { padding: 20px; border-radius: 10px; background-color: #2D1A1A; border: 2px solid #FF4B4B; text-align: center; }
     </style>
-""", unsafe_allow_index=True)
+""", unsafe_allow_html=True)
 
 st.title("🎯 Institutional Multi-Timeframe AI Analyzer")
 
@@ -92,7 +92,7 @@ if st.session_state.analyzed:
     col_res1, col_res2 = st.columns(2)
     
     with col_res1:
-        st.markdown("<div class='report-box'><h3>🔍 Market Structure (HTF)</h3>" + raw_text + "</div>", unsafe_allow_index=True)
+        st.markdown("<div class='report-box'><h3>🔍 Market Structure (HTF)</h3>" + raw_text + "</div>", unsafe_allow_html=True)
         
     with col_res2:
         # Streamlit Popup/Dialog simulation for the execution blueprint
@@ -105,4 +105,4 @@ if st.session_state.analyzed:
         if st.button("🔥 Open Instant Popup Blueprint", use_container_width=True):
             show_popup(raw_text)
             
-        st.markdown("<div class='verdict-box'><h3>🚦 AI Action Plan</h3>Review the layout or click the popup button above for exact trade signals.</div>", unsafe_allow_index=True)
+        st.markdown("<div class='verdict-box'><h3>🚦 AI Action Plan</h3>Review the layout or click the popup button above for exact trade signals.</div>", unsafe_allow_html=True)
