@@ -65,8 +65,9 @@ if htf_file or ltf_file:
                         """
                         contents_list.append(prompt)
                         
+                        # 🚨 FIXED: Model updated to 'gemini-2.0-flash' for new users
                         response = client.models.generate_content(
-                            model='gemini-2.5-flash',
+                            model='gemini-2.0-flash',
                             contents=contents_list
                         )
                         
