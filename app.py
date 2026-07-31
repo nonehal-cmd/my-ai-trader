@@ -82,8 +82,11 @@ if htf_file or ltf_file:
                         
                         # 🔵 CONFIGURATION FOR GROQ FREE BACKUP (Llama-3 Vision)
                         elif "Groq" in api_provider:
-                            # Groq ke liye image ko base64 me badalna padta hai
+                            # 🚨 FIXED: Convert RGBA to RGB to fix JPEG compression error
                             main_img = Image.open(htf_file if htf_file else ltf_file)
+                            if main_img.mode in ("RGBA", "P"):
+                                main_img = main_img.convert("RGB")
+                                
                             buffered = io.BytesIO()
                             main_img.save(buffered, format="JPEG")
                             base64_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
@@ -106,7 +109,7 @@ if htf_file or ltf_file:
                                 "response_format": {"type": "json_object"}
                             }
                             res = requests.post("https://groq.com", headers=headers, json=payload)
-                            clean_text = res.json()['choices'][0]['message']['content'].strip()
+                            clean_text = res.json()['choices']['message']['content'].strip()
 
                         # JSON clean up and parsing
                         if clean_text.startswith("```json"): clean_text = clean_text[7:]
