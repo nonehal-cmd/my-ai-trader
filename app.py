@@ -2,10 +2,10 @@ import streamlit as st
 from google import genai
 from PIL import Image
 
-# 1. Page Configuration for Wide View (Zero Scrolling)
+# 1. Page Configuration for Wide View
 st.set_page_config(page_title="Pro AI Analyzer", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS for UI styling and Popup look
+# Custom CSS for UI styling
 st.markdown("""
     <style>
     .report-box { padding: 15px; border-radius: 10px; background-color: #1E1E1E; margin-bottom: 10px; border-left: 5px solid #00FFCC; }
@@ -13,12 +13,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🎯 Institutional Multi-Timeframe AI Analyzer")
+st.title("🎯 Pro AI Chart & Psychology Analyzer")
 
 # Sidebar Setup
 api_key = st.sidebar.text_input("Google Gemini API Key:", type="password")
 st.sidebar.markdown("---")
-st.sidebar.info("💡 Pro-Tip: Multi-timeframe analysis se accuracy badh jaati hai.")
+st.sidebar.info("💡 Tip: Aap koi bhi ek chart ya fir dono charts ek saath upload kar sakte hain.")
 
 # State Management for hiding image after analysis
 if 'analyzed' not in st.session_state:
@@ -29,61 +29,69 @@ if 'report_text' not in st.session_state:
 # 2. Multi-Timeframe File Uploaders
 col_files1, col_files2 = st.columns(2)
 with col_files1:
-    htf_file = st.file_uploader("1. Higher Timeframe Chart (e.g., 1H / 4H)", type=["jpg", "png", "jpeg"])
+    htf_file = st.file_uploader("Chart 1 (Higher Timeframe - Optional)", type=["jpg", "png", "jpeg"])
 with col_files2:
-    ltf_file = st.file_uploader("2. Lower Timeframe Chart (e.g., 5M / 15M)", type=["jpg", "png", "jpeg"])
+    ltf_file = st.file_uploader("Chart 2 (Lower Timeframe - Optional)", type=["jpg", "png", "jpeg"])
 
 # Show images ONLY IF analysis hasn't started yet (Hiding System)
 if (htf_file or ltf_file) and not st.session_state.analyzed:
     st.subheader("📸 Uploaded Charts Preview")
     col_img1, col_img2 = st.columns(2)
     if htf_file:
-        with col_img1: st.image(Image.open(htf_file), caption="Higher Timeframe", use_container_width=True)
+        with col_img1: st.image(Image.open(htf_file), caption="Chart 1", use_container_width=True)
     if ltf_file:
-        with col_img2: st.image(Image.open(ltf_file), caption="Lower Timeframe", use_container_width=True)
+        with col_img2: st.image(Image.open(ltf_file), caption="Chart 2", use_container_width=True)
 
-# 3. Execution Trigger
-if htf_file and ltf_file:
-    if st.button("🚀 Run Deep Combo Analysis", use_container_width=True):
+# 3. Execution Trigger (Chalu hoga agar KAM SE KAM EK file upload ho)
+if htf_file or ltf_file:
+    if st.button("🚀 Run Deep Analysis", use_container_width=True):
         if not api_key:
             st.error("Please enter Gemini API Key in the sidebar!")
         else:
-            with st.spinner("AI analyzing both timeframes..."):
+            with st.spinner("AI aapke data ko deeply scan kar raha hai..."):
                 client = genai.Client(api_key=api_key)
-                img1 = Image.open(htf_file)
-                img2 = Image.open(ltf_file)
                 
+                # Check karna ki user ne kaun-kaun se charts diye hain
+                contents_list = []
+                if htf_file:
+                    contents_list.append(Image.open(htf_file))
+                if ltf_file:
+                    contents_list.append(Image.open(ltf_file))
+                
+                # Prompt ko flexible banana
                 prompt = """
-                Aap ek Institutional Multi-Timeframe Analyst hain. In dono charts (HTF aur LTF) ka milakar analysis karein.
-                Report ko bilkul short aur direct banayein. Khaas taur par short headings use karein.
-                Format exactly text me bhejye jo niche diye gaye 4 hisson me divide ho:
-                [PART1] Market Trend & Structure from HTF.
-                [PART2] Exact Trade Entry, Stop-Loss, and Target levels based on LTF alignment.
-                [PART3] Top 2 Retail Trader Mistakes to avoid on this current setup.
-                [PART4] Final Verdict (HIGH PROBABILITY or NO TRADE) with Risk-to-Reward.
+                Aap ek World-Class Institutional Trader aur Trading Psychologist hain. 
+                Diye gaye trading chart screenshot (ya dono screenshots) ko deeply analyze karein. 
+                Agar do charts hain toh unhe multi-timeframe ke mutabaq align karein, agar ek hai toh usi par focus karein.
+                Report ko in 4 headings me divide karein:
+                1. 🔍 MARKET STRUCTURE & PRICE ACTION (Trend, Support/Resistance, Patterns)
+                2. 🎯 EXACT TRADE EXECUTION PLAN (Entry, Stop-Loss, Target price levels ke sath)
+                3. ⚠️ RETAIL TRADER MISTAKES (Is chart par aam traders kya galti karte hain)
+                4. 🧠 TRADING PSYCHOLOGY & RISK-TO-REWARD RATIO
+                5. 🚦 FINAL VERDICT (HIGH PROBABILITY SETUP ya NO TRADE ZONE)
                 """
+                contents_list.append(prompt)
                 
-                # 🚨 FIXED: Try with Primary Model, if 503 error, auto-switch to Backup Model
+                # Dual-Model Backup Execution
                 try:
                     response = client.models.generate_content(
-                        model='gemini-2.5-flash',  # Ultra-stable stable production model
-                        contents=[img1, img2, prompt]
+                        model='gemini-2.5-flash',  # Ultra-stable production model
+                        contents=contents_list
                     )
                     st.session_state.report_text = response.text
                     st.session_state.analyzed = True
                     st.rerun()
                 except Exception as primary_error:
                     try:
-                        # Backup Model Trigger if primary fails
                         response = client.models.generate_content(
                             model='gemini-2.0-flash',
-                            contents=[img1, img2, prompt]
-                        )
+                            contents=contents_list
+                    )
                         st.session_state.report_text = response.text
                         st.session_state.analyzed = True
                         st.rerun()
                     except Exception as backup_error:
-                        st.error(f"Dono free servers busy hain. Kuch seconds baad try karein. Detail: {str(backup_error)}")
+                        st.error(f"Servers busy hain, please 5 seconds baad try karein. Detail: {str(backup_error)}")
 
 # 4. Display Result in clean, No-Scroll Dashboard Columns
 if st.session_state.analyzed:
@@ -97,14 +105,13 @@ if st.session_state.analyzed:
         
     raw_text = st.session_state.report_text
     
-    # Displaying clean layout using Columns to prevent vertical scrolling
     col_res1, col_res2 = st.columns(2)
     
     with col_res1:
-        st.markdown("<div class='report-box'><h3>🔍 Market Structure (HTF)</h3>" + raw_text + "</div>", unsafe_allow_html=True)
+        st.markdown("<div class='report-box'><h3>📊 Chart Technical Report</h3>" + raw_text + "</div>", unsafe_allow_html=True)
         
     with col_res2:
-        # Streamlit Popup/Dialog simulation for the execution blueprint
+        # Streamlit Popup/Dialog simulation
         @st.dialog("🎯 INSTANT TRADE BLUEPRINT")
         def show_popup(text):
             st.write("Professional Execution Plan:")
