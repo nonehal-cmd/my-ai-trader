@@ -37,9 +37,9 @@ if uploaded_file is not None:
                     5. 🚦 FINAL VERDICT (HIGH PROBABILITY SETUP ya NO TRADE ZONE)
                     """
                     
-                    # Gemini Multimodal API Call
+                    # 🚨 FIXED: Updated to latest available production model
                     response = client.models.generate_content(
-                        model='gemini-2.5-flash',
+                        model='gemini-3.6-flash',
                         contents=[image, system_prompt]
                     )
                     
