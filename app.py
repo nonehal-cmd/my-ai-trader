@@ -5,7 +5,7 @@ from PIL import Image
 # 1. Page Configuration for Wide View (Zero Scrolling)
 st.set_page_config(page_title="Pro AI Analyzer", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS for UI styling and Popup look (🚨 FIXED: unsafe_allow_html=True)
+# Custom CSS for UI styling and Popup look
 st.markdown("""
     <style>
     .report-box { padding: 15px; border-radius: 10px; background-color: #1E1E1E; margin-bottom: 10px; border-left: 5px solid #00FFCC; }
@@ -49,32 +49,41 @@ if htf_file and ltf_file:
             st.error("Please enter Gemini API Key in the sidebar!")
         else:
             with st.spinner("AI analyzing both timeframes..."):
+                client = genai.Client(api_key=api_key)
+                img1 = Image.open(htf_file)
+                img2 = Image.open(ltf_file)
+                
+                prompt = """
+                Aap ek Institutional Multi-Timeframe Analyst hain. In dono charts (HTF aur LTF) ka milakar analysis karein.
+                Report ko bilkul short aur direct banayein. Khaas taur par short headings use karein.
+                Format exactly text me bhejye jo niche diye gaye 4 hisson me divide ho:
+                [PART1] Market Trend & Structure from HTF.
+                [PART2] Exact Trade Entry, Stop-Loss, and Target levels based on LTF alignment.
+                [PART3] Top 2 Retail Trader Mistakes to avoid on this current setup.
+                [PART4] Final Verdict (HIGH PROBABILITY or NO TRADE) with Risk-to-Reward.
+                """
+                
+                # 🚨 FIXED: Try with Primary Model, if 503 error, auto-switch to Backup Model
                 try:
-                    client = genai.Client(api_key=api_key)
-                    img1 = Image.open(htf_file)
-                    img2 = Image.open(ltf_file)
-                    
-                    prompt = """
-                    Aap ek Institutional Multi-Timeframe Analyst hain. In dono charts (HTF aur LTF) ka milakar analysis karein.
-                    Report ko bilkul short aur direct banayein. Khaas taur par short headings use karein.
-                    Format exactly text me bhejye jo niche diye gaye 4 hisson me divide ho:
-                    [PART1] Market Trend & Structure from HTF.
-                    [PART2] Exact Trade Entry, Stop-Loss, and Target levels based on LTF alignment.
-                    [PART3] Top 2 Retail Trader Mistakes to avoid on this current setup.
-                    [PART4] Final Verdict (HIGH PROBABILITY or NO TRADE) with Risk-to-Reward.
-                    """
-                    
                     response = client.models.generate_content(
-                        model='gemini-3.6-flash',
+                        model='gemini-2.5-flash',  # Ultra-stable stable production model
                         contents=[img1, img2, prompt]
                     )
-                    
-                    # Store in session and hide image
                     st.session_state.report_text = response.text
                     st.session_state.analyzed = True
                     st.rerun()
-                except Exception as e:
-                    st.error(f"Error: {str(e)}")
+                except Exception as primary_error:
+                    try:
+                        # Backup Model Trigger if primary fails
+                        response = client.models.generate_content(
+                            model='gemini-2.0-flash',
+                            contents=[img1, img2, prompt]
+                        )
+                        st.session_state.report_text = response.text
+                        st.session_state.analyzed = True
+                        st.rerun()
+                    except Exception as backup_error:
+                        st.error(f"Dono free servers busy hain. Kuch seconds baad try karein. Detail: {str(backup_error)}")
 
 # 4. Display Result in clean, No-Scroll Dashboard Columns
 if st.session_state.analyzed:
